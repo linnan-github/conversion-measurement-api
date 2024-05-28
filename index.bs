@@ -989,6 +989,16 @@ An attribution report is a [=struct=] with the following items:
 
 </dl>
 
+An <dfn>attribution debug info</dfn> is a [=tuple=] with the following items:
+
+<dl dfn-for="attribution debug info">
+: <dfn>source debug key</dfn>
+:: Null or a [=string=].
+: <dfn>trigger debug key</dfn>
+:: Null or a [=string=].
+
+</dl>
+
 <h3 dfn-type=dfn>Event-level report</h3>
 
 An event-level report is an [=attribution report=] with the following additional items:
@@ -1010,10 +1020,8 @@ An event-level report is an [=attribution report=] with the following additional
 :: A string.
 : <dfn>attribution destinations</dfn>
 :: A [=set=] of [=sites=].
-: <dfn>source debug key</dfn>
-:: Null or a non-negative 64-bit integer.
-: <dfn>trigger debug key</dfn>
-:: Null or a non-negative 64-bit integer.
+: <dfn>attribution debug info</dfn>
+:: An [=attribution debug info=].
 
 </dl>
 
@@ -1054,10 +1062,8 @@ An <dfn>aggregatable attribution report</dfn> is an [=aggregatable report=] with
 :: A [=boolean=].
 : <dfn>trigger context ID</dfn>
 :: Null or a [=string=].
-: <dfn>source debug key</dfn>
-:: Null or a non-negative 64-bit integer.
-: <dfn>trigger debug key</dfn>
-:: Null or a non-negative 64-bit integer.
+: <dfn>attribution debug info</dfn>
+:: An [=attribution debug info=].
 
 </dl>
 
@@ -2181,6 +2187,26 @@ and a [=boolean=] |fenced|:
 
 Note: The user agent may optionally include error details of any type in |body|["`error`"].
 
+<h3 id="attribution-debug-mode">Attribution debug mode</h3>
+
+To <dfn>check if attribution debug mode can be enabled</dfn> given an [=attribution debug info=] |debugInfo|:
+
+1. If |debugInfo|'s [=attribution debug info/source debug key=] is null,
+    return false.
+1. If |debugInfo|'s [=attribution debug info/trigger debug key=] is null,
+    return false.
+1. Return true.
+
+To <dfn>serialize an attribution debug info</dfn> given a [=map=] |data| and an
+[=attribution debug info=] |debugInfo|:
+
+1. If |debugInfo|'s [=attribution debug info/source debug key=] is not null, [=map/set=]
+    |data|["`source_debug_key`"] to |debugInfo|'s [=attribution debug info/source debug key=],
+    [=serialize an integer|serialized=].
+1. If |debugInfo|'s [=attribution debug info/trigger debug key=] is not null, [=map/set=]
+    |data|["`trigger_debug_key`"] to |report|'s [=attribution debug info/trigger debug key=],
+    [=serialize an integer|serialized=].
+
 <h3 id="obtaining-and-delivering-aggregatable-debug-report">Obtaining and delivering an aggregatable debug report</h3>
 
 To <dfn>check if aggregatable debug reporting should be blocked by rate-limit</dfn>
@@ -2827,7 +2853,7 @@ a [=trigger state=] |triggerState|:
 
 To <dfn>obtain and deliver a verbose debug report on source registration</dfn> given a
 [=source debug data type=] |dataType|, an [=attribution source=] |source|, and
-an optional [=boolean=] |isNoised| (default false):
+a [=boolean=] |isNoised|:
 
 1. If |source|'s [=attribution source/debug reporting enabled=] is false, return.
 1. If |source|'s [=attribution source/debug cookie set=] is false, return.
@@ -2882,7 +2908,8 @@ an optional [=boolean=] |isNoised| (default false):
     and |source|'s [=attribution source/fenced=].
 
 To <dfn>obtain and deliver an aggregatable debug report on source registration</dfn>
-given a [=source debug data type=] |dataType| and an [=attribution source=] |source|:
+given a [=source debug data type=] |dataType|, an [=attribution source=] |source|,
+and a [=boolean=] |isNoised|:
 
 1. If |source|'s [=attribution source/fenced=] is true, return.
 1. Let |config| be |source|'s [=attribution source/aggregatable debug reporting config=].
@@ -2892,13 +2919,13 @@ given a [=source debug data type=] |dataType| and an [=attribution source=] |sou
 1. Let |dataTypeToReport| be |dataType|.
 1. If |dataTypeToReport| is "<code>[=source debug data type/source-success=]</code>"
     and |isNoised| is true, set |dataTypeToReport| to "<code>[=source debug data type/source-noised=]</code>".
-1. If |debugDataMap|[|dataType|] [=map/exists=]:
+1. If |debugDataMap|[|dataTypeToReport|] [=map/exists=]:
     1. Let |contribution| be a new [=aggregatable contribution=] with items:
         : [=aggregatable contribution/key=]
-        :: |debugDataMap|[|dataType|]'s [=aggregatable contribution/key=] bitwise-OR
+        :: |debugDataMap|[|dataTypeToReport|]'s [=aggregatable contribution/key=] bitwise-OR
             |config|'s [=aggregatable debug reporting config/key piece=]
         : [=aggregatable contribution/value=]
-        :: |debugDataMap|[|dataType|]'s [=aggregatable contribution/value=]
+        :: |debugDataMap|[|dataTypeToReport|]'s [=aggregatable contribution/value=]
     1. [=list/Append=] |contribution| to |contributions|.
 1. Run [=obtain and deliver an aggregatable debug report on registration=] with |contributions|,
     |source|'s [=attribution source/source site=], |source|'s [=attribution source/reporting origin=],
@@ -2907,12 +2934,13 @@ given a [=source debug data type=] |dataType| and an [=attribution source=] |sou
     and |source|'s [=attribution source/source time=].
 
 To <dfn>obtain and deliver debug reports on source registration</dfn>
-given a [=source debug data type=] |dataType| and an [=attribution source=] |source|:
+given a [=source debug data type=] |dataType|, an [=attribution source=] |source|,
+and an optional [=boolean=] |isNoised| (default false):
 
 1. Run [=obtain and deliver a verbose debug report on source registration=]
-    with |dataType| and |source|.
+    with |dataType|, |source|, and |isNoised|.
 1. Run [=obtain and deliver an aggregatable debug report on source registration=]
-    with |dataType| and |source|.
+    with |dataType|, |source|, and |isNoised|.
 
 To <dfn>process an attribution source</dfn> given an [=attribution source=] |source|:
 
@@ -3523,7 +3551,7 @@ and an optional [=attribution report=] <dfn for="obtain verbose debug data on tr
     : [=verbose debug data/data type=]
     :: |dataType|.
     : [=verbose debug data/body=]
-    :: The result of running [=obtain verbose debug data body on trigger registration=] with |dataType|, |trigger|, |sourceToAttribute| and |report|.
+    :: The result of running [=obtain verbose debug data body on trigger registration=] with |dataType|, |trigger|, |sourceToAttribute|, and |report|.
 1. Return |data|.
 
 <h3 algorithm id="triggering-event-level-attribution">Triggering event-level attribution</h3>
@@ -3691,8 +3719,8 @@ To <dfn>trigger event-level attribution</dfn> given an [=attribution trigger=] |
 1. If |matchedConfig|'s [=event-level trigger configuration/dedup key=] is not null,
     [=list/append=] it to |sourceToAttribute|'s [=attribution source/dedup keys=].
 1. If |triggeringStatus| is "<code>[=triggering status/attributed=]</code>" and
-    |report|'s [=event-level report/source debug key=] is not null and |report|'s
-    [=event-level report/trigger debug key=] is not null, [=queue a task=] to
+    the result of [=checking if attribution debug mode can be enabled=]
+    with |report|'s [=event-level report/attribution debug info=] is true, [=queue a task=] to
     [=attempt to deliver a debug report=] with |report|.
 1. Return the [=triggering result=] (|triggeringStatus|, |debugData|).
 
@@ -3757,16 +3785,16 @@ To <dfn>trigger aggregatable attribution</dfn> given an [=attribution trigger=] 
     with |report| and |sourceToAttribute| is false:
     1. Return the [=triggering result=] ("<code>[=triggering status/dropped=]</code>",
         ("<code>[=trigger debug data type/trigger-aggregate-insufficient-budget=]</code>", null)).
-1. Add |report| to the [=aggregatable attribution report cache=].
+1. [=set/Append=] |report| to the [=aggregatable attribution report cache=].
 1. Increment |sourceToAttribute|'s [=attribution source/number of aggregatable attribution reports=] value by 1.
 1. Decrement |sourceToAttribute|'s [=attribution source/remaining aggregatable attribution budget=] value by
     |report|'s [=aggregatable attribution report/required aggregatable budget=].
 1. If |matchedDedupKey| is not null, [=list/append=] it to |sourceToAttribute|'s [=attribution source/aggregatable dedup keys=].
 1. [=set/Append=] |rateLimitRecord| to the [=attribution rate-limit cache=].
 1. Run [=generate null attribution reports and assign private state tokens=] with |trigger| and |report|.
-1. If |report|'s [=aggregatable attribution report/source debug key=] is not null and |report|'s
-    [=aggregatable attribution report/trigger debug key=] is not null, [=queue a task=] to
-    [=attempt to deliver a debug report=] with |report|.
+1. If the result of [=checking if attribution debug mode can be enabled=]
+    with |report|'s [=aggregatable attribution report/attribution debug info=] is true,
+    [=queue a task=] to [=attempt to deliver a debug report=] with |report|.
 1. Return the [=triggering result=] ("<code>[=triggering status/attributed=]</code>", null).
 
 <h3 algorithm id="triggering-attribution">Triggering attribution</h3>
@@ -3960,10 +3988,8 @@ a 64-bit integer priority |priority|, and a [=trigger spec map=] [=map/entry=]
     :: |source|'s [=attribution source/source identifier=].
     : [=event-level report/report ID=]
     :: The result of [=generating a random UUID=].
-    : [=event-level report/source debug key=]
-    :: |source|'s [=attribution source/debug key=].
-    : [=event-level report/trigger debug key=]
-    :: |triggerDebugKey|.
+    : [=event-level report/attribution debug info=]
+    :: (|source|'s [=attribution source/debug key=], |triggerDebugKey|). 
 1. Return |report|.
 
 <h3 id="obtaining-required-aggregatable-budget">Obtaining an aggregatable report's required budget</h3>
@@ -3990,10 +4016,8 @@ an [=attribution trigger=] |trigger|:
     :: |reportTime|.
     : [=aggregatable attribution report/report ID=]
     :: The result of [=generating a random UUID=].
-    : [=aggregatable attribution report/source debug key=]
-    :: |source|'s [=attribution source/debug key=].
-    : [=aggregatable attribution report/trigger debug key=]
-    :: |trigger|'s [=attribution trigger/debug key=].
+    : [=aggregatable attribution report/attribution debug info=]
+    :: (|source|'s [=attribution source/debug key=], |trigger|'s [=attribution trigger/debug key=]).
     : [=aggregatable attribution report/contributions=]
     :: The result of running [=create aggregatable contributions=] with |source| and |trigger|.
     : [=aggregatable attribution report/serialized private state token=]
@@ -4023,10 +4047,8 @@ To <dfn>obtain a null attribution report</dfn> given an [=attribution trigger=] 
     :: |reportTime|
     : [=aggregatable attribution report/report ID=]
     :: The result of [=generating a random UUID=]
-    : [=aggregatable attribution report/source debug key=]
-    :: null
-    : [=aggregatable attribution report/trigger debug key=]
-    :: |trigger|'s [=attribution trigger/debug key=]
+    : [=aggregatable attribution report/attribution debug info=]
+    :: (null, |trigger|'s [=attribution trigger/debug key=])
     : [=aggregatable attribution report/contributions=]
     :: «»
     : [=aggregatable attribution report/serialized private state token=]
@@ -4161,10 +4183,11 @@ of running the following steps:
 1. If |report| is an:
     <dl class="switch">
     : [=aggregatable attribution report=]
-    ::
-        1. If |report|'s [=aggregatable attribution report/source debug key=] is null, return <strong>disabled</strong>.
-        1. If |report|'s [=aggregatable attribution report/trigger debug key=] is null, return <strong>disabled</strong>.
-        1. Return <strong>enabled</strong>.
+    :: 
+        1. If the result of [=checking if attribution debug mode can be enabled=] with
+            |report|'s [=aggregatable attribution report/attribution debug info=] is true,
+            return <strong>enabled</strong>.
+        1. Return <strong>disabled</strong>.
     : [=aggregatable debug report=]
     :: Return <strong>disabled</strong>.
 
@@ -4342,12 +4365,8 @@ To <dfn>obtain an event-level report body</dfn> given an [=attribution report=] 
     : "`scheduled_report_time`"
     :: |report|'s [=event-level report/report time=] in seconds since the UNIX epoch, [=serialize an integer|serialized=]
 
-1. If |report|'s [=event-level report/source debug key=] is not null, [=map/set=]
-    |data|["`source_debug_key`"] to |report|'s [=event-level report/source debug key=],
-    [=serialize an integer|serialized=].
-1. If |report|'s [=event-level report/trigger debug key=] is not null, [=map/set=]
-    |data|["`trigger_debug_key`"] to |report|'s [=event-level report/trigger debug key=],
-    [=serialize an integer|serialized=].
+1. Run [=serialize an attribution debug info=] with |data| and |report|'s
+    [=event-level report/attribution debug info=].
 1. Return |data|.
 
 To <dfn>serialize an [=event-level report=]</dfn> |report|, run the following steps:
@@ -4374,12 +4393,8 @@ To <dfn>obtain an [=aggregatable report=] body</dfn> given an [=aggregatable rep
 To <dfn>serialize an [=aggregatable attribution report=] </dfn> |report|, run the following steps:
 
 1. Let |data| be the result of running [=obtain an aggregatable report body=] with |report|.
-1. If |report|'s [=aggregatable attribution report/source debug key=] is not null, [=map/set=]
-    |data|["`source_debug_key`"] to |report|'s [=aggregatable attribution report/source debug key=],
-    [=serialize an integer|serialized=].
-1. If |report|'s [=aggregatable attribution report/trigger debug key=] is not null, [=map/set=]
-    |data|["`trigger_debug_key`"] to |report|'s [=aggregatable attribution report/trigger debug key=],
-    [=serialize an integer|serialized=].
+1. Run [=serialize an attribution debug info=] with |data| and |report|'s
+    [=aggregatable attribution report/attribution debug info=].
 1. If |report|'s [=aggregatable attribution report/trigger context ID=] is not null, [=map/set=]
     |data|["`trigger_context_id`"] to |report|'s [=aggregatable attribution report/trigger context ID=].
 1. Return the [=byte sequence=] resulting from executing [=serialize an infra value to JSON bytes=] on |data|.
@@ -4853,7 +4868,7 @@ it requires browsing activity on multiple sites.
 
 The [=aggregatable debug reports=] may also encode non-Same-Origin data but in
 encrypted form. The security risk is further mitigated by the generation of
-null debug reports and the additive noise addition in the aggregation service.
+null debug reports and the additive noise in the aggregation service.
 
 ## Opting in to the API ## {#opting-in-to-the-api}
 
