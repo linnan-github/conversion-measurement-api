@@ -4456,7 +4456,6 @@ To <dfn>generate an aggregatable debug report URL</dfn> given an [=aggregatable 
 1. Let |path| be «"`debug`", "`report-aggregate-debug`"».
 1. Return the result of running [=generate a report URL=] with |report|'s
     [=aggregatable debug report/reporting origin=] and |path|.
->>>>>>> 59ddffd (Spec for aggregate debug reporting reports generation and delivery)
 
 <h3 id="create-report-request">Creating a report request</h3>
 
@@ -4840,7 +4839,7 @@ of many origins colluding together to violate privacy. API deployments should mo
 for abuse using these vectors to evaluate the trade-off.
 
 The generation of [=verbose debug reports=] involves reads to the [=attribution source cache=],
-[=event-level report cache=], [=aggregatable report cache=], and [=attribution rate-limit cache=],
+[=event-level report cache=], [=aggregatable attribution report cache=], and [=attribution rate-limit cache=],
 and the [=verbose debug data=] sent to a given [=origin=] may encode non-Same-Origin
 data that are generated from grouping together data submitted by multiple [=origins=],
 e.g. failures due to rate-limits that are not fully compliant with the Same-Origin Policy.
