@@ -4852,6 +4852,10 @@ security concern with respect to the Same-Origin Policy. The risk is of less con
 trigger registrations as [=attribution sources=] have to be registered to start with and
 it requires browsing activity on multiple sites.
 
+The [=aggregatable debug reports=] may also encode non-Same-Origin data but in
+encrypted form. The security risk is further mitigated by the generation of
+null debug reports and the additive noise addition in the aggregation service.
+
 ## Opting in to the API ## {#opting-in-to-the-api}
 
 *This section is non-normative.*
